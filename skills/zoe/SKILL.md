@@ -27,6 +27,17 @@ Before orchestrating, verify:
 1. Read `roles/zoe.md` from the project root. Use it as your primary orchestration guide.
 2. If the user references business context (customer data, meeting notes, design docs), read those files too.
 
+## Configuration
+
+Zoe reads the following environment variables. Sensible defaults are provided.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ZOE_MAX_CONCURRENT` | `3` | Max agents running at the same time. Lower this on machines with <16GB RAM. |
+| `ZOE_TDD_REQUIRED` | `true` | If `true`, coder agents must write tests before implementation. |
+
+Coder agents can be exempted from TDD for pure exploration, one-off scripts, or documentation tasks. State the exemption in their instruction.
+
 ## Task Decomposition
 
 Break the user's request into independent sub-tasks. For each sub-task, decide:
@@ -39,39 +50,29 @@ Break the user's request into independent sub-tasks. For each sub-task, decide:
 For each sub-task, follow this exact sequence:
 
 1. **Read the role file**: load `roles/<role_name>.md` to get the specialist's system prompt.
-2. **Create worktree**: run `bash scripts/create_worktree.sh "<task_id>" "main"` to get an isolated git worktree.
-3. **Spawn agent**: use the `Agent` tool with these parameters:
+2. **Create worktree**: run `bash skills/zoe/scripts/create_worktree.sh "<task_id>" "main"` to get an isolated git worktree. The script prints the absolute worktree path.
+3. **Register task**: run `python3 skills/zoe/scripts/registry.py add "<task_id>" "<role_name>" "<worktree_path>" "<instruction>"`.
+4. **Spawn agent**: use the `Agent` tool with these parameters:
    - `description`: the role name (e.g., "backend engineer for auth API")
-   - `prompt`: combine the role's system prompt + the specific task instruction + context about the worktree path
+   - `prompt`: combine the role's system prompt + the specific task instruction + the worktree path + any dependencies
    - `isolation`: `"worktree"` — this is mandatory for every agent
    - `run_in_background`: `true` for parallel execution
-4. **Track in registry**: append the task to `tasks_registry.json` with status `running`.
+5. **Track in registry**: when the agent finishes, update its status with `python3 skills/zoe/scripts/registry.py update "<task_id>" "finished|failed" "<summary>"`.
 
 ## Concurrency Limit
 
-Respect a hard limit of **3 concurrent agents** at any time due to the 16GB RAM constraint. If more than 3 sub-tasks exist, queue them and spawn the next batch only when a running agent finishes.
-
-## TDD Enforcement
-
-Every agent that writes code must follow Test-Driven Development:
-1. Write failing tests first that define the expected behavior.
-2. Implement the minimal code to make tests pass.
-3. Refactor if needed, keeping tests green.
-
-Enforce this by including in every coder agent's prompt: "Write tests before implementation. Run tests after every change."
+Respect `ZOE_MAX_CONCURRENT` (default 3). If more sub-tasks exist, queue them and spawn the next batch only when a running agent finishes.
 
 ## Monitoring & Synthesis
 
-1. Periodically check agent status using `./scripts/check_agents.sh` or by inspecting `tasks_registry.json`.
+1. Periodically check agent status using `bash skills/zoe/scripts/check_agents.sh` or by inspecting `tasks_registry.json`.
 2. When all agents finish, read their outputs from the worktrees.
 3. Synthesize a final report: what succeeded, what failed, what needs human review, and any PRs created.
-4. Update `tasks_registry.json` to mark finished tasks.
+4. Mark tasks as `finished` or `failed` in the registry.
 
 ## Security Rules
 
-- **Permission Strategy**:
-  - When using `scripts/spawn_agent.sh` (OpenClaw path), agents run with `--permission-mode auto`.
-  - When using the native `Agent` tool (local path), ensure the parent session is in `acceptEdits` mode so subagents inherit file-edit auto-approval.
-  - Only use `--permission-mode bypassPermissions` for truly isolated, disposable worktrees.
+- **Permission Strategy**: run the parent session in `acceptEdits` mode so subagents inherit file-edit auto-approval. Never use `--permission-mode bypassPermissions`.
 - Never allow agents to access production data, credentials, or admin APIs.
 - All work must stay inside git worktrees. Do not modify the main working tree directly.
+- Agent outputs must be written to files inside the worktree so Zoe can read them later.
