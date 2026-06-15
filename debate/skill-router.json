@@ -1,0 +1,35 @@
+{
+  "topic": "Red team analysis of skill-router skill",
+  "max_rounds": 1,
+  "current_round": 1,
+  "rounds": [
+    {
+      "round": 1,
+      "red_points": [
+        "静态索引维护负担",
+        "触发词冲突",
+        "无动态发现能力",
+        "推荐粒度太粗",
+        "无反馈闭环"
+      ],
+      "blue_rebuttals": [
+        "skill 生态无标准 API，硬编码最可控",
+        "优先级规则可避免冲突",
+        "动态扫描有安全/一致性风险",
+        "表格可扩展，核心是指向方向",
+        "可通过 memory 记录纠偏"
+      ],
+      "green_notes": [],
+      "resolved": [
+        false,
+        true,
+        false,
+        true,
+        true
+      ],
+      "timestamp": "2026-06-15T11:35:20.641866"
+    }
+  ],
+  "created_at": "2026-06-15T11:33:14.162571",
+  "updated_at": "2026-06-15T11:35:20.641876"
+}
