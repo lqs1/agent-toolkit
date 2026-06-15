@@ -1,3 +1,13 @@
+---
+slug: {{TASK_SLUG}}
+title: {{TASK_TITLE}}
+status: planned
+phase: plan
+check_passed: false
+created_at: {{YYYY-MM-DD}}
+updated_at: {{YYYY-MM-DD}}
+---
+
 # {{TASK_SLUG}}
 
 ## Title
