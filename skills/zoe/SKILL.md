@@ -52,7 +52,8 @@ For each sub-task, follow this exact sequence:
 1. **Read the role file**: load `roles/<role_name>.md` to get the specialist's system prompt.
 2. **Create worktree**: run `bash skills/zoe/scripts/create_worktree.sh "<task_id>" "main"` to get an isolated git worktree. The script prints the absolute worktree path.
 3. **Register task**: run `python3 skills/zoe/scripts/registry.py add "<task_id>" "<role_name>" "<worktree_path>" "<instruction>"`.
-4. **Spawn agent**: use the `Agent` tool with these parameters:
+4. **Wait for concurrency slot**: if `ZOE_MAX_CONCURRENT` agents are already running, run `python3 skills/zoe/scripts/queue.py wait` to block until a slot is free.
+5. **Spawn agent**: use the `Agent` tool with these parameters:
    - `description`: the role name (e.g., "backend engineer for auth API")
    - `prompt`: combine the role's system prompt + the specific task instruction + the worktree path + any dependencies
    - `isolation`: `"worktree"` — this is mandatory for every agent
@@ -63,7 +64,14 @@ For each sub-task, follow this exact sequence:
 
 Respect `ZOE_MAX_CONCURRENT` (default 3). If more sub-tasks exist, queue them and spawn the next batch only when a running agent finishes.
 
-## Monitoring & Synthesis
+## Retry Policy
+
+If an agent fails:
+1. Read its `AGENT_REPORT.md` (if any) and the worktree state.
+2. Update the registry to `failed` with a summary of the error.
+3. Create a new task ID (e.g., append `-retry-1`) with the same role and an updated instruction that includes the previous error context.
+4. Spawn the retry agent in a fresh worktree branched from the failed worktree's branch.
+5. Do not retry more than 2 times for the same logical task. After 2 failures, escalate to the user.
 
 1. Periodically check agent status using `bash skills/zoe/scripts/check_agents.sh` or by inspecting `tasks_registry.json`.
 2. When all agents finish, read their outputs from the worktrees.

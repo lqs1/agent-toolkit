@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGISTRY="${1:-tasks_registry.json}"
+# Default to the same registry path used by registry.py
+REGISTRY="${1:-skills/zoe/tasks_registry.json}"
 
 if [[ ! -f "$REGISTRY" ]]; then
   echo "No registry found at ${REGISTRY}" >&2
@@ -29,6 +30,11 @@ if not tasks:
     print("No tasks in registry.")
     sys.exit(0)
 
+running = sum(1 for t in tasks if t.get("status") == "running")
+finished = sum(1 for t in tasks if t.get("status") == "finished")
+failed = sum(1 for t in tasks if t.get("status") == "failed")
+
+print(f"Total: {len(tasks)} | Running: {running} | Finished: {finished} | Failed: {failed}")
 print(f"{'ID':<24} {'ROLE':<18} {'STATUS':<12} {'WORKTREE'}")
 print("-" * 80)
 for t in tasks:

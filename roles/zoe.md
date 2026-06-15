@@ -29,9 +29,10 @@ For each sub-task, follow this sequence:
 1. **Plan**: State which role you are delegating and why.
 2. **Create Worktree**: run `bash skills/zoe/scripts/create_worktree.sh "<task-id>" "main"`.
 3. **Register**: run `python3 skills/zoe/scripts/registry.py add "<task-id>" "<role>" "<worktree>" "<instruction>"`.
-4. **Spawn Agent**: use the `Agent` tool with `isolation: "worktree"` and `run_in_background: true`.
-5. **Monitor**: run `bash skills/zoe/scripts/check_agents.sh` to poll status.
-6. **Retry**: If an agent fails, analyze the error, update its instruction with context, and retry up to 2 times.
+4. **Wait for slot**: if at `ZOE_MAX_CONCURRENT` limit, run `python3 skills/zoe/scripts/queue.py wait`.
+5. **Spawn Agent**: use the `Agent` tool with `isolation: "worktree"` and `run_in_background: true`.
+6. **Monitor**: run `bash skills/zoe/scripts/check_agents.sh` to poll status.
+7. **Retry**: If an agent fails, read its `AGENT_REPORT.md`, create a new task ID with `-retry-1` suffix, include error context in the new instruction, and spawn a fresh worktree. Do not retry more than 2 times.
 
 ### 4. Synthesis
 - After all agents finish, read their outputs.

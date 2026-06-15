@@ -9,6 +9,13 @@ if [[ -z "$TASK_ID" ]]; then
   exit 1
 fi
 
+# Abort if the working tree has uncommitted changes, unless explicitly allowed.
+if [[ "${ZOE_ALLOW_DIRTY:-0}" != "1" ]] && ! git diff --quiet; then
+  echo "Error: working tree has uncommitted changes." >&2
+  echo "Commit/stash them first, or set ZOE_ALLOW_DIRTY=1 to proceed at your own risk." >&2
+  exit 1
+fi
+
 WORKTREE_DIR="worktrees/${TASK_ID}"
 mkdir -p worktrees
 

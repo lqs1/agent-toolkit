@@ -14,6 +14,7 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
 
 # Logs
 *.log
@@ -24,3 +25,6 @@ worktrees/
 
 # Task registry runtime file
 tasks_registry.json
+
+# Runtime debate state dumps (analysis outputs, not source)
+skills/redteam-debate/saved_debates/
