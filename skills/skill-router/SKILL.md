@@ -45,11 +45,11 @@ Use this skill when the user:
 
 1. Listen to the user's request.
 2. Match it against the table above.
-3. If the table seems stale or the user mentions a skill not in the index, run a dynamic scan:
+3. If the table seems stale or the user mentions a skill not in the index, run the dynamic router:
    ```bash
-   find ~/.claude/skills -name 'SKILL.md' -maxdepth 2
+   python3 /Users/qslu/personal/agent-toolkit/skills/skill-router/scripts/router.py "<user query>"
    ```
-   Then read the SKILL.md frontmatter of any unknown skill to include it in the recommendation.
+   This scans all SKILL.md files, parses frontmatter, and returns a ranked JSON list of top matches with scores and boundary notes. Use the output to include any unknown skill in the recommendation.
 4. Recommend the best 1–3 skills with a one-sentence reason **and a one-sentence boundary/limitation** each.
 5. Tell the user how to invoke each one:
    - Direct slash command: `/skill-name`

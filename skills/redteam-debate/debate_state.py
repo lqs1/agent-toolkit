@@ -27,12 +27,14 @@ class DebateState:
         blue_rebuttals: list[str],
         green_notes: list[str] | None = None,
         resolved: list[bool] | None = None,
+        metadata: dict | None = None,
     ) -> None:
         """Record one complete round of red/blue exchange.
 
         Args:
             resolved: Optional list of bools, one per red_point, indicating
                       whether the blue rebuttal successfully addressed it.
+            metadata: Optional dict for arbiter annotations (severity, confidence, etc.).
         """
         if resolved is not None and len(resolved) != len(red_points):
             raise ValueError(
@@ -45,6 +47,7 @@ class DebateState:
             "blue_rebuttals": blue_rebuttals,
             "green_notes": green_notes or [],
             "resolved": resolved,
+            "metadata": metadata,
             "timestamp": datetime.now().isoformat(),
         })
         self.current_round += 1

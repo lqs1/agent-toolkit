@@ -41,13 +41,33 @@ def parse_memory_file(path: Path) -> MemoryEntry | None:
 
 
 def scan_directory(directory: Path) -> list[MemoryEntry]:
-    """Scan a directory for memory markdown files."""
+    """Scan a directory for memory markdown files, excluding archive subdirs."""
     if not directory.exists():
         return []
     entries: list[MemoryEntry] = []
     for path in sorted(directory.rglob("*.md")):
         # Skip archive directories and common backup/preview files.
         if "/archive/" in str(path) or path.name.startswith("~") or path.name.endswith(".md.bak"):
+            continue
+        try:
+            entry = parse_memory_file(path)
+        except PermissionError:
+            continue
+        if entry:
+            entries.append(entry)
+    return entries
+
+
+def scan_directory_excluding_archive(directory: Path) -> list[MemoryEntry]:
+    """Scan a directory for memory markdown files, explicitly excluding .claude/memory/archive/."""
+    if not directory.exists():
+        return []
+    entries: list[MemoryEntry] = []
+    for path in sorted(directory.rglob("*.md")):
+        # Skip any path under an archive/ directory
+        if any(part == "archive" for part in path.relative_to(directory).parts[:-1]):
+            continue
+        if path.name.startswith("~") or path.name.endswith(".md.bak"):
             continue
         try:
             entry = parse_memory_file(path)
@@ -288,6 +308,27 @@ def generate_report(
     return "\n".join(lines)
 
 
+def generate_merge(left: MemoryEntry, right: MemoryEntry, template_path: Path) -> str:
+    """Generate a merged memory entry using the merge template and two entries."""
+    template = template_path.read_text(encoding="utf-8")
+    merged_name = left.name if len(left.name) >= len(right.name) else right.name
+    merged_description = left.description if len(left.description) >= len(right.description) else right.description
+    merged_body = f"{left.body}\n\n{right.body}"
+    result = template.replace("{{merged_name}}", merged_name)
+    result = result.replace("{{merged_description}}", merged_description)
+    result = result.replace("{{merged_body}}", merged_body)
+    return result
+
+
+def archive_entries(entries: list[MemoryEntry], memory_dir: Path) -> None:
+    """Move approved stale entries into <memory_dir>/archive/."""
+    archive_dir = memory_dir / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    for entry in entries:
+        target = archive_dir / entry.path.name
+        entry.path.rename(target)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description="Analyze Claude Code memory files.")
@@ -296,16 +337,48 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--threshold", type=float, default=0.6)
     parser.add_argument("--min-body-words", type=int, default=15)
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--archive",
+        action="store_true",
+        help="Move approved stale entries to <memory-dir>/archive/.",
+    )
+    parser.add_argument(
+        "--merge-pair",
+        nargs=2,
+        metavar=("PATH1", "PATH2"),
+        help="Generate a merged entry from two memory files and print to stdout.",
+    )
     args = parser.parse_args(argv)
 
-    project_entries = scan_directory(args.project_dir)
-    global_entries = scan_directory(args.global_dir)
+    if args.merge_pair:
+        left_path = Path(args.merge_pair[0])
+        right_path = Path(args.merge_pair[1])
+        left = parse_memory_file(left_path)
+        right = parse_memory_file(right_path)
+        if left is None or right is None:
+            print("Error: Could not parse one or both memory files.", file=sys.stderr)
+            return 1
+        skill_dir = Path(__file__).resolve().parent
+        template_path = skill_dir / "templates" / "merge.md"
+        if not template_path.exists():
+            print(f"Error: Merge template not found at {template_path}", file=sys.stderr)
+            return 1
+        print(generate_merge(left, right, template_path))
+        return 0
+
+    project_entries = scan_directory_excluding_archive(args.project_dir)
+    global_entries = scan_directory_excluding_archive(args.global_dir)
     all_entries = project_entries + global_entries
 
     duplicates = find_duplicates(all_entries, threshold=args.threshold)
     conflicts = find_conflicts(all_entries)
     stale_entries = find_stale(all_entries)
     vague_entries = find_vague(all_entries, min_body_words=args.min_body_words)
+
+    if args.archive:
+        for memory_dir in (args.project_dir, args.global_dir):
+            dir_stale = [e for e in stale_entries if e.path.is_relative_to(memory_dir)]
+            archive_entries(dir_stale, memory_dir)
 
     report = generate_report(
         args.project_dir,

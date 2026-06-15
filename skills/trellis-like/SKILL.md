@@ -17,6 +17,15 @@ Use this skill when the user:
 - Wants explicit task tracking for multi-step work
 - Says something like "trellis this", "plan this feature", "start a task", or "finish work"
 
+## Quick Start
+
+```bash
+bash skills/trellis-like/scripts/trellis.sh plan <task-slug>
+bash skills/trellis-like/scripts/trellis.sh check
+bash skills/trellis-like/scripts/trellis.sh doctor
+bash skills/trellis-like/scripts/trellis.sh finish <task-slug>
+```
+
 ## Core Workflow
 
 Run the following six phases in order. Create/update Claude Code tasks for tracking.
@@ -51,7 +60,7 @@ After implementation, before marking done:
 
 1. Run the project-level check script if it exists:
    ```bash
-   bash skills/trellis-like/scripts/trellis-check.sh
+   bash skills/trellis-like/scripts/trellis.sh check
    ```
    The script auto-detects project type, runs lint/typecheck/tests, and applies fallback tools when primary tools are missing.
 2. If a project-level `scripts/trellis-check` or `make trellis-check` exists, it takes precedence.
@@ -66,7 +75,7 @@ After implementation, before marking done:
 Before finishing, run:
 
 ```bash
-bash skills/trellis-like/scripts/trellis-doctor.sh
+bash skills/trellis-like/scripts/trellis.sh doctor
 ```
 
 This validates that `.claude/trellis/` has the required directory structure and that task files contain required frontmatter.
@@ -86,8 +95,8 @@ When the user confirms the task is done:
 
 1. Verify checks have passed:
    - Read the task file frontmatter (`check_passed: true`).
-   - If not, run `bash skills/trellis-like/scripts/trellis-check.sh`.
-   - Run `bash skills/trellis-like/scripts/trellis-doctor.sh` to validate structure.
+   - If not, run `bash skills/trellis-like/scripts/trellis.sh check`.
+   - Run `bash skills/trellis-like/scripts/trellis.sh doctor` to validate structure.
 2. Write a journal entry to `.claude/trellis/journal/<YYYY-MM-DD>_<task-slug>.md` from `templates/journal.md`.
 3. Archive/move the task file from `.claude/trellis/tasks/` to `.claude/trellis/tasks/done/<YYYY-Qx>/`.
 4. Update the task file frontmatter: `phase: done`, `status: done`.

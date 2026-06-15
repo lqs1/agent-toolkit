@@ -309,6 +309,147 @@ export function NuminaCard({ className, children, ...props }: NuminaCardProps) {
 <Input className="numina-input" />
 ```
 
+## 组件
+
+组件源码位于 `skills/numina-ui-style/components/` 目录，可直接复制到 Next.js 项目的 `components/ui/` 中使用。
+
+### 复制到项目
+
+```bash
+# 从 skill 目录复制到目标项目
+cp /Users/qslu/personal/agent-toolkit/skills/numina-ui-style/components/*.tsx ./components/ui/
+```
+
+### NuminaCard
+
+```tsx
+// components/ui/numina-card.tsx
+import { cn } from "@/lib/utils";
+
+interface NuminaCardProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export function NuminaCard({ className, children, ...props }: NuminaCardProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl bg-card p-6 transition-all duration-300",
+        "hover:-translate-y-0.5",
+        className
+      )}
+      style={{ boxShadow: "var(--neu-raised)" }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+```
+
+**用法：**
+
+```tsx
+import { NuminaCard } from "@/components/ui/numina-card";
+
+<NuminaCard>
+  <h3 className="text-xl font-semibold">标题</h3>
+  <p className="text-muted-foreground">内容...</p>
+</NuminaCard>
+```
+
+### NuminaButton
+
+```tsx
+// components/ui/numina-button.tsx
+import { cn } from "@/lib/utils";
+
+interface NuminaButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "destructive";
+}
+
+export function NuminaButton({
+  className,
+  variant = "primary",
+  children,
+  ...props
+}: NuminaButtonProps) {
+  const base =
+    "relative overflow-hidden rounded-xl px-5 py-2.5 font-medium text-white transition-all duration-200 active:scale-[0.97]";
+
+  const variantStyles = {
+    primary: "bg-[#4f46e5] hover:brightness-110",
+    destructive: "bg-[#ef4444] hover:brightness-110",
+  };
+
+  const shadowStyle = {
+    boxShadow:
+      "6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light)",
+  };
+
+  return (
+    <button
+      className={cn(base, variantStyles[variant], "tech-btn-shimmer", className)}
+      style={shadowStyle}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+**用法：**
+
+```tsx
+import { NuminaButton } from "@/components/ui/numina-button";
+
+<NuminaButton>分析</NuminaButton>
+<NuminaButton variant="destructive">删除</NuminaButton>
+```
+
+### NuminaInput
+
+```tsx
+// components/ui/numina-input.tsx
+import { cn } from "@/lib/utils";
+
+interface NuminaInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+export function NuminaInput({ className, ...props }: NuminaInputProps) {
+  return (
+    <input
+      className={cn(
+        "numina-input rounded-xl border-0 bg-card px-4 py-2.5 text-foreground placeholder:text-muted-foreground",
+        "transition-all duration-200",
+        className
+      )}
+      style={{ boxShadow: "var(--neu-pressed-sm)" }}
+      {...props}
+    />
+  );
+}
+```
+
+**用法：**
+
+```tsx
+import { NuminaInput } from "@/components/ui/numina-input";
+
+<NuminaInput placeholder="请输入..." />
+```
+
+> **注意：** `NuminaInput` 依赖 `.numina-input:focus-visible` 的 CSS 定义（见上方 CSS 变量完整定义中的 Input 章节），请确保 `globals.css` 已包含该规则。
+
+### 统一导出
+
+```tsx
+// components/ui/index.ts
+export { NuminaCard } from "./numina-card";
+export { NuminaButton } from "./numina-button";
+export { NuminaInput } from "./numina-input";
+```
+
 ## 暗色 / 高对比模式（可选扩展）
 
 Numina 默认提供浅色拟态主题。如需暗色模式，定义第二套变量：

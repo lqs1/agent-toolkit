@@ -80,3 +80,39 @@ If found, suggest 1–3 new memory entries using the standard frontmatter format
 Or in natural language:
 
 > "Please audit my memory files for duplicates and conflicts."
+
+## CLI Flags
+
+| Flag | Description |
+|------|-------------|
+| `--project-dir <path>` | Project memory directory (required) |
+| `--global-dir <path>` | Global memory directory (required) |
+| `--threshold <float>` | Jaccard similarity threshold for duplicates (default: 0.6) |
+| `--min-body-words <int>` | Minimum body words before flagging vague (default: 15) |
+| `--output <path>` | Write report to file instead of stdout |
+| `--archive` | Move approved stale entries to `<memory-dir>/archive/` |
+| `--merge-pair <path1> <path2>` | Generate a merged entry using `templates/merge.md` and print to stdout |
+
+### `--archive`
+
+When passed, the analyzer automatically archives all entries flagged as **Potentially Stale** into an `archive/` subdirectory under the respective memory directory. This is a dry-run by default; the flag performs the move only when explicitly provided.
+
+```bash
+python ~/.claude/skills/memory-auto-optimization/memory_optimizer.py \
+    --project-dir .claude/memory \
+    --global-dir ~/.claude/projects/my-project/memory \
+    --archive
+```
+
+### `--merge-pair`
+
+Generate a consolidated memory entry from two duplicate files using the merge template. The result is printed to stdout so the orchestrator can review it before writing.
+
+```bash
+python ~/.claude/skills/memory-auto-optimization/memory_optimizer.py \
+    --project-dir .claude/memory \
+    --global-dir ~/.claude/projects/my-project/memory \
+    --merge-pair .claude/memory/user-preference.md .claude/memory/user_pref.md
+```
+
+The merge template lives at `templates/merge.md` and provides guidance on synthesizing `name`, `description`, and `body` from both sources.

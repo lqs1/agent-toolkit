@@ -6,14 +6,17 @@ import pytest
 
 from memory_optimizer import (
     MemoryEntry,
+    archive_entries,
     find_conflicts,
     find_duplicates,
     find_stale,
     find_vague,
+    generate_merge,
     jaccard_similarity,
     main,
     parse_memory_file,
     scan_directory,
+    scan_directory_excluding_archive,
     tokenize,
 )
 
@@ -177,3 +180,104 @@ def test_main_finds_duplicate(
     report = output.read_text(encoding="utf-8")
     assert "Duplicates" in report
     assert "user-preference" in report or "user-pref" in report
+
+
+def test_scan_directory_excludes_archive(tmp_path: Path) -> None:
+    archive_dir = tmp_path / "archive"
+    archive_dir.mkdir()
+    (tmp_path / "active.md").write_text(
+        "---\nname: active\ndescription: Active\n---\n\nActive body.", encoding="utf-8"
+    )
+    (archive_dir / "archived.md").write_text(
+        "---\nname: archived\ndescription: Archived\n---\n\nArchived body.", encoding="utf-8"
+    )
+    entries = scan_directory_excluding_archive(tmp_path)
+    assert len(entries) == 1
+    assert entries[0].name == "active"
+
+
+def test_archive_flag_moves_stale(tmp_path: Path) -> None:
+    stale_path = tmp_path / "stale.md"
+    stale_path.write_text(
+        "---\nname: old-way\ndescription: Old approach\n---\n\nThis is a temporary deprecated approach.",
+        encoding="utf-8",
+    )
+    main(
+        [
+            "--project-dir",
+            str(tmp_path),
+            "--global-dir",
+            str(tmp_path / "global"),
+            "--archive",
+        ]
+    )
+    assert not stale_path.exists()
+    assert (tmp_path / "archive" / "stale.md").exists()
+
+
+def test_merge_pair_flag(tmp_path: Path) -> None:
+    left = tmp_path / "a.md"
+    left.write_text(
+        "---\nname: a\ndescription: desc a\n---\n\nBody A.", encoding="utf-8"
+    )
+    right = tmp_path / "b.md"
+    right.write_text(
+        "---\nname: b\ndescription: desc b\n---\n\nBody B.", encoding="utf-8"
+    )
+    import io
+    import sys
+
+    captured = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = captured
+    try:
+        ret = main(
+            [
+                "--project-dir",
+                str(tmp_path),
+                "--global-dir",
+                str(tmp_path),
+                "--merge-pair",
+                str(left),
+                str(right),
+            ]
+        )
+    finally:
+        sys.stdout = old_stdout
+    assert ret == 0
+    output = captured.getvalue()
+    assert "Body A" in output
+    assert "Body B" in output
+    assert "{{merged_name}}" not in output
+    assert "{{merged_description}}" not in output
+    assert "{{merged_body}}" not in output
+
+
+def test_merge_pair_missing_template(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    left = tmp_path / "a.md"
+    left.write_text(
+        "---\nname: a\ndescription: desc a\n---\n\nBody A.", encoding="utf-8"
+    )
+    right = tmp_path / "b.md"
+    right.write_text(
+        "---\nname: b\ndescription: desc b\n---\n\nBody B.", encoding="utf-8"
+    )
+    # Patch the skill_dir resolution to point at a directory without templates
+    fake_skill_dir = tmp_path / "fake_skill"
+    fake_skill_dir.mkdir()
+    monkeypatch.setattr(
+        "memory_optimizer.Path.resolve", lambda self: fake_skill_dir / "memory_optimizer.py"
+    )
+    ret = main(
+        [
+            "--project-dir",
+            str(tmp_path),
+            "--global-dir",
+            str(tmp_path),
+            "--merge-pair",
+            str(left),
+            str(right),
+        ]
+    )
+    assert ret == 1
+
