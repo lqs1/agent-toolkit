@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# trellis-check.sh — Auto-detect project type and run quality checks.
+# project-check.sh — Auto-detect project type and run quality checks.
 # Exit 0 if all checks pass, non-zero otherwise.
 
 set -uo pipefail
@@ -11,7 +11,7 @@ PASS=0
 FAIL=0
 BLOCKERS=""
 
-log() { echo "[trellis-check] $*"; }
+log() { echo "[project-check] $*"; }
 run_cmd() {
   local cmd="$1"
   local label="$2"
@@ -27,15 +27,15 @@ run_cmd() {
 }
 
 # Project-level override
-if [[ -x scripts/trellis-check ]]; then
-  log "Using project-level scripts/trellis-check"
-  ./scripts/trellis-check
+if [[ -x scripts/project-check ]]; then
+  log "Using project-level scripts/project-check"
+  ./scripts/project-check
   exit $?
 fi
 
 if [[ -f Makefile ]] && grep -qE "^[a-zA-Z0-9_-]+:.*#?.*trellis" Makefile; then
   log "Using Makefile trellis target"
-  make trellis-check
+  make project-check
   exit $?
 fi
 

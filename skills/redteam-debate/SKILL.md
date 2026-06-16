@@ -48,8 +48,9 @@ allowed-tools: Read, Bash, Write, Edit
 2. 确认议题的具体内容（如果是代码/文件，先 Read 了解全貌）
 3. 创建 debate state：
    ```bash
+   SKILL_DIR=~/.claude/skills/redteam-debate
    python -c "
-   import sys; sys.path.insert(0, '/Users/qslu/.claude/skills/redteam-debate')
+   import sys; sys.path.insert(0, '$SKILL_DIR')
    from debate_state import DebateState
    state = DebateState(topic='用户议题', max_rounds=5)
    print(state.save())
@@ -93,8 +94,9 @@ allowed-tools: Read, Bash, Write, Edit
 使用后台 Bash 调用完成，不中断对话：
 
 ```bash
+SKILL_DIR=~/.claude/skills/redteam-debate
 python -c "
-import sys; sys.path.insert(0, '/Users/qslu/.claude/skills/redteam-debate')
+import sys; sys.path.insert(0, '$SKILL_DIR')
 from debate_state import DebateState
 state = DebateState.load('/path/to/saved_debate.json')
 state.add_round(
@@ -124,21 +126,16 @@ state.save()
 当达到设定轮数或用户说「结束」、「出结论」时：
 
 1. 调用 `state.generate_verdict()` 输出自动评估（基于每轮 `resolved` 标记）。
-2. **可选：运行 Arbiter 评分脚本** — 对未解决问题自动标注严重度、置信度和分类：
-   ```bash
-   python3 /Users/qslu/.claude/skills/redteam-debate/scripts/arbiter.py /path/to/saved_debate.json
-   ```
-   输出 Markdown 格式的结构化报告，按严重度排序，并给出 Top 3 建议行动。可作为绿队人工判定的参考输入。
-3. **绿队人工判定每轮 resolved 标记，再给出最终务实结论。**
-4. **将 resolved 标记和初步结论展示给用户，询问是否同意**：
+2. **绿队人工判定每轮 resolved 标记，再给出最终务实结论。**
+3. **将 resolved 标记和初步结论展示给用户，询问是否同意**：
    - 「以上对各项风险的判定是否准确？如不同意某条，请指出。」
-5. **用户确认后询问是否满意**:
+4. **用户确认后询问是否满意**:
    - 「以上结论是否满意？如不满意，可以说『再来 N 轮』继续深入。」
-6. **用户满意后，询问是否保存结果**：
+5. **用户满意后，询问是否保存结果**：
    - 「是否将辩论结论保存到项目文档？（如保存到 docs/adrs/）」
    - 如果用户确认，将绿队结论写入项目的 `docs/adrs/` 或用户指定路径
    - 文件命名格式：`adr-{序号}-{topic}.md`
-7. **保存后询问是否清理辩论过程**：
+6. **保存后询问是否清理辩论过程**：
    - 「辩论过程文件（state JSON）是否删除？保留可后续续轮，删除可释放空间。」
    - 如用户确认删除，执行：`rm /path/to/saved_debate.json`
 

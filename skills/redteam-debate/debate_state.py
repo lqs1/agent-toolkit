@@ -168,3 +168,16 @@ class DebateState:
         obj.created_at = data["created_at"]
         obj.updated_at = data["updated_at"]
         return obj
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Debate state manager")
+    parser.add_argument("--topic", required=True)
+    parser.add_argument("--max-rounds", type=int, default=5)
+    parser.add_argument("--save-path", type=Path, default=None)
+    args = parser.parse_args()
+    state = DebateState(topic=args.topic, max_rounds=args.max_rounds)
+    path = state.save(args.save_path)
+    print(path)
