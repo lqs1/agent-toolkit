@@ -31,6 +31,14 @@
   --sidebar-shadow-down: rgba(0, 0, 0, 0.4);
   --sidebar-raised: 6px 6px 12px var(--sidebar-shadow-down), -6px -6px 12px var(--sidebar-shadow-up);
   --sidebar-pressed: inset 4px 4px 8px var(--sidebar-shadow-down), inset -4px -4px 8px var(--sidebar-shadow-up);
+
+  /* Aurora loading tokens - translucent RGB on pure black */
+  --aurora-pink: rgba(236, 72, 153, 0.45);
+  --aurora-cyan: rgba(34, 211, 238, 0.45);
+  --aurora-purple: rgba(168, 85, 247, 0.4);
+  --aurora-amber: rgba(251, 191, 36, 0.35);
+  --aurora-green: rgba(74, 222, 128, 0.35);
+  --aurora-blur: 60px;
 }
 
 [data-region="us"] {
@@ -67,6 +75,36 @@
   50% { opacity: 0.85; }
 }
 
+@keyframes aurora-flow {
+  0%, 100% {
+    transform: translateX(-25%) translateY(-10%) rotate(0deg) scale(1.2);
+    opacity: 0.5;
+  }
+  25% {
+    transform: translateX(-10%) translateY(5%) rotate(2deg) scale(1.3);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(10%) translateY(-5%) rotate(-1deg) scale(1.2);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateX(0%) translateY(10%) rotate(1deg) scale(1.3);
+    opacity: 0.75;
+  }
+}
+
+@keyframes aurora-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes loading-bar-slide {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(250%); opacity: 0; }
+}
+
 .tech-glow { animation: tech-glow-pulse 3s ease-in-out infinite; }
 .tech-glow-fast { animation: tech-glow-pulse 1.5s ease-in-out infinite; }
 .tech-data-flicker { animation: tech-data-flicker 4s ease-in-out infinite; }
@@ -75,6 +113,118 @@
   background: linear-gradient(90deg, transparent 0%, rgba(79, 70, 229, 0.08) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: tech-shimmer 2.5s infinite linear;
+}
+
+/* Aurora loading - colorful black effect */
+.numina-loading-aurora {
+  position: relative;
+  background-color: #000;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.numina-loading-aurora::before,
+.numina-loading-aurora::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(var(--aurora-blur));
+  background:
+    radial-gradient(ellipse at 30% 50%, var(--aurora-pink) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 40%, var(--aurora-cyan) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 80%, var(--aurora-purple) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, var(--aurora-amber) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 80%, var(--aurora-green) 0%, transparent 40%);
+  mix-blend-mode: screen;
+  animation: aurora-flow 8s ease-in-out infinite;
+}
+
+.numina-loading-aurora::after {
+  animation-delay: -4s;
+  animation-duration: 10s;
+  opacity: 0.7;
+}
+
+/* Soft aurora for light/card backgrounds */
+.numina-loading-aurora-soft {
+  position: relative;
+  background-color: var(--card);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.numina-loading-aurora-soft::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(var(--aurora-blur));
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(236, 72, 153, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 40%, rgba(34, 211, 238, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 45%);
+  animation: aurora-flow 10s ease-in-out infinite;
+}
+
+/* Skeleton with subtle aurora shimmer */
+.numina-skeleton {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    var(--card) 0%,
+    var(--card) 40%,
+    rgba(79, 70, 229, 0.08) 50%,
+    var(--card) 60%,
+    var(--card) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius);
+  animation: aurora-shimmer 2s infinite linear;
+  overflow: hidden;
+}
+
+.numina-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(236, 72, 153, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 50%, rgba(34, 211, 238, 0.08), transparent 40%);
+  filter: blur(20px);
+  animation: aurora-flow 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Top loading bar with aurora gradient */
+.numina-loading-bar {
+  position: relative;
+  height: 3px;
+  background: #000;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+
+.numina-loading-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(236, 72, 153, 0.9),
+    rgba(34, 211, 238, 0.9),
+    rgba(168, 85, 247, 0.9),
+    transparent
+  );
+  filter: blur(2px);
+  border-radius: 9999px;
+  animation: loading-bar-slide 1.5s ease-in-out infinite;
 }
 
 .tech-btn-shimmer {
@@ -126,11 +276,22 @@
   .tech-glow-fast,
   .tech-data-flicker,
   .tech-shimmer-bg,
-  .tech-bg-particles::after {
+  .tech-bg-particles::after,
+  .numina-loading-aurora::before,
+  .numina-loading-aurora::after,
+  .numina-loading-aurora-soft::before,
+  .numina-skeleton,
+  .numina-skeleton::after,
+  .numina-loading-bar::after {
     animation: none !important;
   }
 
   .tech-btn-shimmer::before {
     display: none;
+  }
+
+  .numina-skeleton {
+    background: var(--muted-foreground);
+    opacity: 0.2;
   }
 }
